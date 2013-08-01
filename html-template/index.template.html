@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html> 
+    <head>
+        <title>Cytoscape Web</title>
+        <script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
+        <script type="text/javascript" src="js/AC_OETags.js"></script>
+        <script type="text/javascript" src="js/json2.js"></script>
+        <script type="text/javascript" src="js/cytoscapeweb.js"></script>
+        
+        <script type="text/javascript">
+        window.onload=function()
+            {
+                        
+                var swf = "${swf}";
+
+                                // id of Cytoscape Web container div
+                                var div_id = "cytoscapeweb";
+                                var paddingOffset = 5;
+                                
+                                
+                                // visual style
+                                var visual_style = 
+                                {
+                                        nodes: 
+                                        {
+                                                label: {customMapper: {functionName: "labelFunction"}},
+                                                compoundLabel: {customMapper: {functionName: "labelFunction"}},
+                                                compoundColor: "#FFFFFF",
+                                                compoundOpacity: 1.0,
+                                                opacity: 1.0,
+                                                compoundShape: {customMapper: {functionName: "compoundShapeFunction"}},
+                                                color: "#FFFFFF",
+                                                //shape: {customMapper: {functionName: "shapeFunction"}},
+                                                labelVerticalAnchor: "middle",
+                                                labelHorizontalAnchor: "center",
+                                                labelYOffset: { passthroughMapper: { attrName: "labelOffset" } },
+                                                compoundLabelVerticalAnchor: "top",
+                                                compoundLabelHorizontalAnchor: "center",
+                                                compoundLabelYOffset: 0.0,
+                                                compoundPaddingLeft: paddingOffset,
+                    							compoundPaddingRight: paddingOffset,
+                    							compoundPaddingTop: paddingOffset,
+                   								compoundPaddingBottom: paddingOffset,
+                   								compoundSize: "auto",
+                                                labelFontSize:{customMapper: {functionName: "labelSizeFunction"}}
+                                        },
+                                
+                                        edges: 
+                                        {
+                                                targetArrowShape: 
+                                                {
+                                                        defaultValue: "NONE",
+                                                        discreteMapper: 
+                                                        {
+                                                                attrName: "arc_class",
+                                                                entries: 
+                                                                [
+                                                                        {attrValue:"consumption", value: "NONE"},
+                                                                        {attrValue:"modulation", value: "DIAMOND"},
+                                                                        {attrValue:"catalysis", value: "CIRCLE"},
+                                                                        {attrValue:"inhibition", value: "T"},
+                                                                        {attrValue:"production", value: "ARROW"},
+                                                                        {attrValue:"stimulation", value: "ARROW"},
+                                                                        {attrValue:"necessary stimulation", value: "T-ARROW"}
+                                                                ]
+                                                        }
+                                                },
+                                                targetArrowColor: 
+                                                {
+                                                        defaultValue: "#ffffff",
+                                                        discreteMapper: 
+                                                        {
+                                                                attrName: "arc_class",
+                                                                entries: 
+                                                                [
+                                                                        {attrValue:"production", value: "#000000"}
+                                                                ]
+                                                        }
+                                                }
+                                        }
+                        };
+
+
+                        // init and draw
+                        var vis = new org.cytoscapeweb.Visualization(div_id); 
+                                     
+                         vis["labelSizeFunction"] = function (data)
+                        {
+                                var retValue = 11;
+                        
+                                if(data["clone_marker"] == true)
+                                {
+                                        retValue = 9;
+                                }
+                                
+                                return retValue;        
+                        }
+                        
+                        vis["compoundShapeFunction"] = function (data)
+                        {
+                                var retValue = "COMPLEX";
+                        
+                                if(data["glyph_class"] == "compartment")
+                                {
+                                        retValue = "COMPARTMENT";
+                                }
+                                
+                                return retValue;        
+                        }
+        
+                        vis["labelFunction"] = function (data)
+                        {
+                                var retValue = data["glyph_label_text"];
+                                
+                                if(data["glyph_class"] == "omitted process")
+                                {
+                                        retValue = "\\\\";
+                                }
+                                
+                                if(data["glyph_class"] == "uncertain process")
+                                {
+                                        retValue = "?";
+                                }
+                                
+                                if(data["glyph_class"] == "and" || data["glyph_class"] == "or" || data["glyph_class"] == "not" )
+                                {
+                                        retValue = data["glyph_class"].toUpperCase();
+                                }
+                                
+                                if(data["glyph_class"] != "complex" && data["glyph_class"] != "compartment" )
+                                {
+                                	 var truncateIndicator = '...';
+				               		 var nameSize = retValue.length;
+				             		 var truncateOffset = 5;
+				                
+					                if (nameSize > truncateOffset) 
+					                {
+					                        retValue = retValue.substring(0, truncateOffset);
+					                        retValue = retValue.concat(truncateIndicator);
+					                }
+	                            }        
+                                return retValue;
+                        }
+                        
+
+                        $.get("fixtures/sbgnml.xml", function(data) {
+                                if (typeof data !== "string") {
+                                        if (window.ActiveXObject) {
+                                                data = data.xml;
+                                        } else {
+                                                data = (new XMLSerializer()).serializeToString(data);
+                                        }
+                                }
+                                
+                                vis.draw({ network: data, layout:"SbgnPDLayout", visualStyle: visual_style });
+                        });
+         };
+                 
+        </script>
+        
+        <style>
+            /* The Cytoscape Web container must have its dimensions set. */
+            html, body { padding: 0; margin: 0; text-align: center; }
+            #cytoscapeweb { width: 1024px; height: 768px; border: 2px solid #333333; margin: 0 auto 0 auto;  }
+        </style>
+    </head>
+    
+    <body>
+        <div id="cytoscapeweb">
+            Cytoscape Web will replace the contents of this div with your graph.
+        </div>
+        <p>
+            <a href="http://cytoscapeweb.cytoscape.org" >Cytoscape Web</a>, &copy; 2010
+        </p>
+    </body>
+    
+</html>
