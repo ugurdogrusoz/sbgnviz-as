@@ -151,12 +151,6 @@ package org.cytoscapeweb.model.converters
 				cns.y = bbox.y+bbox.height/2;
 				cns.bounds = bbox;
 				
-				//Clone marker label alignment
-				if(cns.data.clone_marker)
-				{
-					cns.data.labelOffset -= 2;
-				}
-				
 				// Add compartments to a seperate list
 				if (glyph.@[CLASS].toString() == "compartment") 
 				{

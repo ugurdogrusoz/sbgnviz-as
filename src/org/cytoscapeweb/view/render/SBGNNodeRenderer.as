@@ -131,15 +131,10 @@ package org.cytoscapeweb.view.render
 				isMultimer = true;
 			}
 			
-			if (glyphClass == MACROMOLECULE || glyphClass == SIMPLE_CHEMICAL ) 
+			if (glyphClass == MACROMOLECULE  ) 
 			{     
 				g.lineStyle(1, 0x000000, 1);
 				var cornerOffset:Number = 10;
-				
-				if (glyphClass == SIMPLE_CHEMICAL) 
-				{
-					cornerOffset = 100;
-				}
 				
 				g.beginFill(0xffffff & fillColor, 1.0);
 				drawMolecule(cns,cns.graphics,-cns.bounds.width/2, -cns.bounds.height/2, cns.bounds.width, cns.bounds.height,isClone,cornerOffset);
@@ -150,6 +145,10 @@ package org.cytoscapeweb.view.render
 					drawMolecule(cns,cns.graphics,-cns.bounds.width/2+multimerOffset, -cns.bounds.height/2+multimerOffset, cns.bounds.width, cns.bounds.height,isClone,cornerOffset); 
 				}
 				
+			}
+			else if (glyphClass == SIMPLE_CHEMICAL)
+			{
+				drawStadiumNode(cns.graphics,-cns.bounds.width/2, -cns.bounds.height/2, cns.bounds.width, cns.bounds.height,isClone);
 			}
 			else if (glyphClass == SOURCE_AND_SINK || glyphClass == AND ) 
 			{
@@ -256,7 +255,7 @@ package org.cytoscapeweb.view.render
 				for each (var tmpCns:CompoundNodeSprite in stateAndInfoGlyphs) 
 				{					
 					var childRect:Rectangle = tmpCns.data.glyph_bbox;               
-
+					
 					// Adjust the position of state variable and unit of information glyphs
 					var x:Number = -cns.x + tmpCns.x-childRect.width/2;
 					var y:Number = -cns.y + tmpCns.y-childRect.height/2;
@@ -376,6 +375,33 @@ package org.cytoscapeweb.view.render
 					}
 				}
 			}
+		}
+		protected function drawStadiumNode(g:Graphics,x:Number, y:Number,w:Number, h:Number,isClone:Boolean):void
+		{
+			if(isClone)
+			{
+				var matrix:Matrix = new Matrix();
+				matrix.createGradientBox(w, h/2, -Math.PI/2, 0, 0);
+				var colors:Array = [CLONE_MARKER_COLOR,0xFFFFFF];
+				var alphas:Array = [1,  1];
+				var ratios:Array = [127,127];
+				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
+				g.moveTo(-w/4,-h/2);
+				g.lineTo(w/4,-h/2);
+				g.curveTo(w/2,0,w/4,h/2);
+				g.lineTo(-w/4,h/2);
+				g.curveTo(-w/2,0,-w/4,-h/2);
+				g.endFill();
+			}
+			else
+			{
+				g.moveTo(-w/4,-h/2);
+				g.lineTo(w/4,-h/2);
+				g.curveTo(w/2,0,w/4,h/2);
+				g.lineTo(-w/4,h/2);
+				g.curveTo(-w/2,0,-w/4,-h/2);
+			}
+			
 		}
 		
 		protected function drawMolecule(cns:CompoundNodeSprite,g:Graphics,x:Number, y:Number,w:Number, h:Number,isClone:Boolean, roundigParameter:Number ):void
