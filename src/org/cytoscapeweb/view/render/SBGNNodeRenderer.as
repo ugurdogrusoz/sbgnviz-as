@@ -119,14 +119,14 @@ package org.cytoscapeweb.view.render
 			var rect:Rectangle = cns.bounds;
 			var stateAndInfoGlyphs:Array = cns.data.stateAndInfoGlyphs as Array;
 			var g:Graphics = cns.graphics;
-			var isMultimer = false;
+			var isMultimer:Boolean = false;
 			var isClone:Boolean = cns.data.clone_marker;
-			var multimerOffset = 5;		
+			var multimerOffset:Number = 5;		
 			
 			// if any multimer occurs
 			if (glyphClass.indexOf(MULTIMER) > 0)
 			{       
-				var str = glyphClass.substr(0, glyphClass.indexOf(MULTIMER)-1);
+				var str:String = glyphClass.substr(0, glyphClass.indexOf(MULTIMER)-1);
 				glyphClass = str;
 				isMultimer = true;
 			}
@@ -134,13 +134,22 @@ package org.cytoscapeweb.view.render
 			if (glyphClass == MACROMOLECULE || glyphClass == SIMPLE_CHEMICAL ) 
 			{     
 				g.lineStyle(1, 0x000000, 1);
+				var cornerOffset:Number = 10;
+				
+				if (glyphClass == SIMPLE_CHEMICAL) 
+				{
+					cornerOffset = 100;
+				}
+				
+				g.beginFill(0xffffff & fillColor, 1.0);
+				drawMolecule(cns,cns.graphics,-cns.bounds.width/2, -cns.bounds.height/2, cns.bounds.width, cns.bounds.height,isClone,cornerOffset);
+				g.endFill();
 				
 				if (isMultimer) 
 				{
-					drawMolecule(cns,rect, multimerOffset,isClone,glyphClass);
+					drawMolecule(cns,cns.graphics,-cns.bounds.width/2+multimerOffset, -cns.bounds.height/2+multimerOffset, cns.bounds.width, cns.bounds.height,isClone,cornerOffset); 
 				}
 				
-				drawMolecule(cns,rect, 0,isClone,glyphClass);
 			}
 			else if (glyphClass == SOURCE_AND_SINK || glyphClass == AND ) 
 			{
@@ -175,13 +184,15 @@ package org.cytoscapeweb.view.render
 			}
 			else if (glyphClass == UNSPECIFIED_ENTITY  ) 
 			{
+				g.beginFill(0xffffff & fillColor, 1.0);
+				drawEllipse(cns.graphics,-cns.bounds.width/2,-cns.bounds.height/2, cns.bounds.width,cns.bounds.height,isClone);
+				g.endFill();
+				
 				if (isMultimer) 
 				{
-					drawEllyptics(cns,multimerOffset,isClone);
-				}
-				
-				drawEllyptics(cns,0,isClone);
-				
+					drawEllipse(cns.graphics,-cns.bounds.width/2+multimerOffset,-cns.bounds.height/2+multimerOffset
+						,cns.bounds.width,cns.bounds.height,isClone);
+				}	
 			}
 			else if (glyphClass == PHENOTYPE ) 
 			{
@@ -210,11 +221,29 @@ package org.cytoscapeweb.view.render
 				// dummy 
 			}
 			
+			//finally render state and info glyphs
 			renderStateAndInfoGlyphs(stateAndInfoGlyphs,cns,fillColor);
 			
 		}
 		
-		protected function renderStateAndInfoGlyphs(stateAndInfoGlyphs:Array,cns:CompoundNodeSprite, fillColor:uint)
+		protected function drawEllipse(g:Graphics,x:Number, y:Number,w:Number, h:Number,isClone:Boolean):void
+		{
+			if(isClone)
+			{
+				var matrix:Matrix = new Matrix();
+				matrix.createGradientBox(w, h/2, -Math.PI/2, 0, 0);
+				var colors:Array = [CLONE_MARKER_COLOR,0xFFFFFF];
+				var alphas:Array = [1,  1];
+				var ratios:Array = [127,127];
+				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
+				g.drawEllipse(x,y,w,h);
+				g.endFill();
+			}
+			else
+				g.drawEllipse(x,y,w,h);
+		}
+		
+		protected function renderStateAndInfoGlyphs(stateAndInfoGlyphs:Array,cns:CompoundNodeSprite, fillColor:uint):void
 		{
 			var g:Graphics = cns.graphics;
 			
@@ -227,10 +256,10 @@ package org.cytoscapeweb.view.render
 				for each (var tmpCns:CompoundNodeSprite in stateAndInfoGlyphs) 
 				{					
 					var childRect:Rectangle = tmpCns.data.glyph_bbox;               
-					trace(tmpCns.data.id+ " " +childRect);
+
 					// Adjust the position of state variable and unit of information glyphs
-					var x = -cns.x + tmpCns.x-childRect.width/2;
-					var y = -cns.y + tmpCns.y-childRect.height/2;
+					var x:Number = -cns.x + tmpCns.x-childRect.width/2;
+					var y:Number = -cns.y + tmpCns.y-childRect.height/2;
 					
 					if (cns.getChildByName(tmpCns.data.id)  != null )
 					{
@@ -285,14 +314,15 @@ package org.cytoscapeweb.view.render
 							g.drawRect(x,y,childRect.width, childRect.height);
 							g.endFill();
 							
-							var tmpString = tmpCns.data.glyph_label_text;
-							if (tmpString.length > MAX_LENGTH_FOR_INFO_GLYPH_LABEL) 
+							var tmpStr:String = tmpCns.data.glyph_label_text;
+							
+							if (tmpStr.length > MAX_LENGTH_FOR_INFO_GLYPH_LABEL) 
 							{
-								tmpString = tmpString.substr(0, MAX_LENGTH_FOR_INFO_GLYPH_LABEL);
-								tmpString += "...";
+								tmpStr = tmpStr.substr(0, MAX_LENGTH_FOR_INFO_GLYPH_LABEL);
+								tmpStr += "...";
 							}
 							
-							myTextBox.text = tmpString;
+							myTextBox.text = tmpStr;
 							
 							myTextBox.x = x + tmpCns.bounds.width/2-myTextBox.width/2;
 							myTextBox.y = y + tmpCns.bounds.height/2-myTextBox.height/2;
@@ -348,33 +378,34 @@ package org.cytoscapeweb.view.render
 			}
 		}
 		
-		//renders shape especially for "macromolecules" glyph type
-		protected function drawMolecule(cns:CompoundNodeSprite ,bounds:Rectangle, multimerOffset:Number, isClone:Boolean, glyphClass:String): void
+		protected function drawMolecule(cns:CompoundNodeSprite,g:Graphics,x:Number, y:Number,w:Number, h:Number,isClone:Boolean, roundigParameter:Number ):void
 		{
-			var g:Graphics = cns.graphics;
-			var cornerOffset:Number = 10;
-			
-			if(glyphClass == SIMPLE_CHEMICAL)
-				cornerOffset = 20;
-			
-			g.drawRoundRect(-bounds.width/2+multimerOffset, -bounds.height/2+multimerOffset, bounds.width, bounds.height, cornerOffset,cornerOffset);
-			
-			if (isClone) 
+			if(isClone)
 			{
-				g.beginFill(CLONE_MARKER_COLOR,1.0);
-				drawOval(cns,true,multimerOffset);
-				//g.drawRoundRect(-bounds.width/2+multimerOffset, bounds.height/4+multimerOffset, bounds.width, bounds.height/4, 4*cornerOffset, 4*cornerOffset);
-				renderCloneMarkerText(cns, 0, bounds.height/4);
+				var matrix:Matrix = new Matrix();
+				matrix.createGradientBox(w, h/2, -Math.PI/2, 0, 0);
+				var colors:Array = [CLONE_MARKER_COLOR,0xFFFFFF];
+				var alphas:Array = [1,  1];
+				var ratios:Array = [127,127];
+				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
+				g.drawRoundRect(x,y,w,h,roundigParameter,roundigParameter);
 				g.endFill();
+				
 			}
+			else
+			{
+				g.drawRoundRect(x,y,w,h,roundigParameter,roundigParameter);
+			}
+			
+			renderCloneMarkerText(cns, 0, cns.bounds.height/4);
 		}
 		
 		//renders shape especially for "perturbing agent" glyph type
 		protected function drawPetrubingAgent(cns:CompoundNodeSprite, bounds:Rectangle, isClone:Boolean): void
 		{
 			var g:Graphics = cns.graphics;
-			var w  = bounds.width;
-			var h  = bounds.height;
+			var w:Number  = bounds.width;
+			var h:Number  = bounds.height;
 			
 			g.moveTo(-w/4,0);
 			g.lineTo(-w/2,-h/2);                    
@@ -386,7 +417,12 @@ package org.cytoscapeweb.view.render
 			
 			if (isClone) 
 			{
-				g.beginFill(CLONE_MARKER_COLOR,1.0);
+				var matrix:Matrix = new Matrix();
+				matrix.createGradientBox(w, h/2, -Math.PI/2, 0, 0);
+				var colors:Array = [CLONE_MARKER_COLOR,0xFFFFFF];
+				var alphas:Array = [1,  1];
+				var ratios:Array = [127,127];
+				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
 				g.moveTo(-3*w/8,h/4);
 				g.lineTo(-w/2,h/2);                     
 				g.lineTo(w/2,h/2);                                      
@@ -402,8 +438,8 @@ package org.cytoscapeweb.view.render
 		protected function drawTag(cns:CompoundNodeSprite, bounds:Rectangle, isClone:Boolean): void
 		{
 			var g:Graphics = cns.graphics;
-			var w  = bounds.width;
-			var h  = bounds.height;
+			var w:Number  = bounds.width;
+			var h:Number  = bounds.height;
 			
 			g.moveTo(-w/2,-h/2);
 			g.lineTo(w/4,-h/2);                     
@@ -414,7 +450,12 @@ package org.cytoscapeweb.view.render
 			
 			if (isClone) 
 			{
-				g.beginFill(CLONE_MARKER_COLOR,1.0);
+				var matrix:Matrix = new Matrix();
+				matrix.createGradientBox(w, h/2, -Math.PI/2, 0, 0);
+				var colors:Array = [CLONE_MARKER_COLOR,0xFFFFFF];
+				var alphas:Array = [1,  1];
+				var ratios:Array = [127,127];
+				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
 				g.moveTo(-w/2, h/4);
 				g.lineTo(3*w/8, h/4);                   
 				g.lineTo(w/4,h/2);
@@ -430,8 +471,8 @@ package org.cytoscapeweb.view.render
 		protected function drawHexagon(cns:CompoundNodeSprite, bounds:Rectangle, isClone:Boolean): void
 		{
 			var g:Graphics = cns.graphics;
-			var w  = bounds.width;
-			var h  = bounds.height;
+			var w:Number  = bounds.width;
+			var h:Number  = bounds.height;
 			
 			g.moveTo(-w/2,0);
 			g.lineTo(-w/4,-h/2);
@@ -455,100 +496,50 @@ package org.cytoscapeweb.view.render
 			}
 		}
 		
-		protected function drawNucleicAcid(cns:CompoundNodeSprite, bounds:Rectangle, multimerOffset:Number, isClone:Boolean)
+		protected function drawNucleicAcid(cns:CompoundNodeSprite, bounds:Rectangle, multimerOffset:Number, isClone:Boolean):void
 		{
 			var g:Graphics = cns.graphics;
-			var w  = bounds.width;
-			var h  = bounds.height;
-			
-			var cornerOffset = 10;
-			
-			var NAFCornerOffset = 8;
-			
-			g.moveTo(-w/2+multimerOffset,-h/2+multimerOffset);
-			g.lineTo(w/2+multimerOffset,-h/2+multimerOffset);					
-			g.lineTo(w/2+multimerOffset,h/2-NAFCornerOffset+multimerOffset);			
-			g.curveTo(w/2+multimerOffset,h/2+multimerOffset,w/2-NAFCornerOffset+multimerOffset,h/2+multimerOffset);			
-			g.lineTo(-w/2+NAFCornerOffset+multimerOffset,h/2+multimerOffset);			
-			g.curveTo(-w/2+multimerOffset,h/2+multimerOffset,-w/2+multimerOffset,h/2-NAFCornerOffset+multimerOffset);
-			g.lineTo(-w/2+multimerOffset,-h/2+multimerOffset);				
+			var w:Number  = bounds.width;
+			var h:Number  = bounds.height;		
+			var NAFCornerOffset:Number = 8;
 			
 			if (isClone) 
 			{
-				g.beginFill(CLONE_MARKER_COLOR,1.0);
-				g.moveTo(-w/2+multimerOffset,h/2-cornerOffset+multimerOffset);
-				g.lineTo(w/2+multimerOffset,h/2-cornerOffset+multimerOffset);   
-				g.lineTo(w/2-cornerOffset+multimerOffset,h/2+multimerOffset);                   
-				g.lineTo(-w/2+cornerOffset+multimerOffset,h/2+multimerOffset);                  
-				g.lineTo(-w/2+multimerOffset,h/2-cornerOffset+multimerOffset);
+				var matrix:Matrix = new Matrix();
+				matrix.createGradientBox(w, h/2, -Math.PI/2, 0, 0);
+				var colors:Array = [CLONE_MARKER_COLOR,0xFFFFFF];
+				var alphas:Array = [1,  1];
+				var ratios:Array = [127,127];
+				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
+				g.moveTo(-w/2+multimerOffset,-h/2+multimerOffset);
+				g.lineTo(w/2+multimerOffset,-h/2+multimerOffset);					
+				g.lineTo(w/2+multimerOffset,h/2-NAFCornerOffset+multimerOffset);			
+				g.curveTo(w/2+multimerOffset,h/2+multimerOffset,w/2-NAFCornerOffset+multimerOffset,h/2+multimerOffset);			
+				g.lineTo(-w/2+NAFCornerOffset+multimerOffset,h/2+multimerOffset);			
+				g.curveTo(-w/2+multimerOffset,h/2+multimerOffset,-w/2+multimerOffset,h/2-NAFCornerOffset+multimerOffset);
+				g.lineTo(-w/2+multimerOffset,-h/2+multimerOffset);	
 				g.endFill();
 				
-				renderCloneMarkerText(cns, 0, h/2-cornerOffset+multimerOffset);
+				renderCloneMarkerText(cns, 0, h/4+multimerOffset);
 				
 			}
+			else
+			{
+				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
+				g.moveTo(-w/2+multimerOffset,-h/2+multimerOffset);
+				g.lineTo(w/2+multimerOffset,-h/2+multimerOffset);					
+				g.lineTo(w/2+multimerOffset,h/2-NAFCornerOffset+multimerOffset);			
+				g.curveTo(w/2+multimerOffset,h/2+multimerOffset,w/2-NAFCornerOffset+multimerOffset,h/2+multimerOffset);			
+				g.lineTo(-w/2+NAFCornerOffset+multimerOffset,h/2+multimerOffset);			
+				g.curveTo(-w/2+multimerOffset,h/2+multimerOffset,-w/2+multimerOffset,h/2-NAFCornerOffset+multimerOffset);
+				g.lineTo(-w/2+multimerOffset,-h/2+multimerOffset);
+			}
 		}
 		
-		protected function drawEllyptics(cns:CompoundNodeSprite, multimerOffset:Number, isClone:Boolean)
+		
+		protected function renderCloneMarkerText(cns:CompoundNodeSprite,x:Number, y:Number):void
 		{
-			var glyphClass = cns.data.glyph_class;
-			var g:Graphics = cns.graphics;
-			var rect:Rectangle = cns.bounds;
-			
-			drawOval(cns, false, multimerOffset);
-			
-			if (isClone) 
-			{
-				g.beginFill(CLONE_MARKER_COLOR,1.0);
-				drawOval(cns, isClone, multimerOffset);
-				g.endFill();
-			}
-		}
-		
-		//
-		// Change "radius" to "xRadius" and add "yRadius" argument.
-		protected function drawOval(cns:CompoundNodeSprite, isClone:Boolean, multimerOffset:Number): void
-		{               
-			var centerX = 0+multimerOffset;
-			var centerY = 0+multimerOffset;
-			var xRadius = cns.bounds.width/2;
-			var yRadius = cns.bounds.height/2;
-			var sides = 200;
-			var loopBounds = sides;
-			
-			if (isClone) 
-			{
-				centerX = 0+multimerOffset;
-				centerY = cns.bounds.height/6+multimerOffset;
-				xRadius = 0.48*cns.bounds.width;
-				yRadius = 0.31*cns.bounds.height;
-				loopBounds = loopBounds/2;
-				
-				renderCloneMarkerText(cns,centerX, centerY);
-			}
-			
-			// Change "radius" to "xRadius".
-			cns.graphics.moveTo(centerX + xRadius,  centerY);
-			//
-			for(var i=0; i<=loopBounds; i++)
-			{
-				var pointRatio = i/sides;
-				var radians = pointRatio * 2 * Math.PI;
-				var xSteps = Math.cos(radians);
-				var ySteps = Math.sin(radians);
-				//
-				// Change "radius" to "xRadius".
-				var pointX = centerX + xSteps * xRadius;
-				//
-				// Change "radius" to "yRadius".
-				var pointY = centerY + ySteps * yRadius;
-				//
-				cns.graphics.lineTo(pointX, pointY);
-			}
-		}
-		
-		protected function renderCloneMarkerText(cns:CompoundNodeSprite,x:Number, y:Number)
-		{
-			var labelText = cns.data.clone_label_text;
+			var labelText:String = cns.data.clone_label_text;
 			
 			if (labelText != "") 
 			{
@@ -561,7 +552,7 @@ package org.cytoscapeweb.view.render
 				var myTextBox:TextSprite = new TextSprite();
 				var textField:TextField = new TextField();
 				
-				myTextBox.color = 0x908888;
+				myTextBox.color = 0xFFFFFF;
 				myTextBox.name = cns.data.id+"c";
 				myTextBox.mouseEnabled = false;
 				myTextBox.mouseChildren = false;
