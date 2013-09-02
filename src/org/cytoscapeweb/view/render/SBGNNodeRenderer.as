@@ -133,7 +133,6 @@ package org.cytoscapeweb.view.render
 			
 			if (glyphClass == MACROMOLECULE  ) 
 			{     
-				g.lineStyle(1, 0x000000, 1);
 				var cornerOffset:Number = 10;
 				
 				g.beginFill(0xffffff & fillColor, 1.0);
@@ -551,7 +550,6 @@ package org.cytoscapeweb.view.render
 			}
 			else
 			{
-				g.beginGradientFill(GradientType.LINEAR,colors, alphas, ratios, matrix, SpreadMethod.PAD);
 				g.moveTo(-w/2+multimerOffset,-h/2+multimerOffset);
 				g.lineTo(w/2+multimerOffset,-h/2+multimerOffset);					
 				g.lineTo(w/2+multimerOffset,h/2-NAFCornerOffset+multimerOffset);			
