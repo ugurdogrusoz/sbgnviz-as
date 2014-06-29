@@ -32,9 +32,9 @@ package org.cytoscapeweb.model.converters
 		public static const SBGNML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"+
 			"<sbgn xmlns=\"http://sbgn.org/libsbgn/pd/0.1\">";
 		// Top level SBGN elements
-		public static const SBGNML:String    = "sbgn";
-		protected static const ARC:String    	 = "arc";
-		protected static const MAP:String    	 = "map";
+		public static const SBGNML:String   			 = "sbgn";
+		protected static const ARC:String    	 		 = "arc";
+		protected static const MAP:String    	 		 = "<map language=\"process description\"/>";
 		
 		//Glyph attributes
 		protected static const GLYPH_ID:String = ID;
@@ -95,7 +95,8 @@ package org.cytoscapeweb.model.converters
 		protected static const ATTRTYPE:String   = "attr.type";
 		protected static const DEFAULT:String    = "default";
 		
-		protected static var sbgnml:XML;
+		protected static var glyphToXML:Object;
+		protected static var arcToXML:Object;
 		
 		// map for reaching the owners of compartments from the port id.
 		protected var portIDtoOwnerGlyph:Object ={};
@@ -107,11 +108,51 @@ package org.cytoscapeweb.model.converters
 		/** @inheritDoc */
 		public function write(ds:DataSet, output:IDataOutput=null):IDataOutput 
 		{
+			var sbgnml:XML = new XML(<sbgn/>);
+			var map:XML = new XML(MAP);
+			
 			if (output == null) output = new ByteArray();
 			sbgnml.setNamespace(new Namespace(SBGN_NAMESPACE));
-			output.writeUTFBytes(sbgnml.toXMLString());
 			
+			//Write back glyphs
+			for each (var sprite:CompoundNodeSprite in (ds.nodes as GraphicsDataTable).dataSprites) 
+			{	
+				map.appendChild((writeGlyph(new XML(), sprite)));
+			}
+	
+			//Write back arcs
+			for each (var edgeSprite:EdgeSprite in (ds.edges as GraphicsDataTable).dataSprites) 
+			{	
+				map.appendChild(arcToXML[edgeSprite.data.id]);
+			}
+			
+			sbgnml.appendChild(map);
+	
+			output.writeUTFBytes(sbgnml.toXMLString());
 			return output;
+		}
+		
+		protected function writeGlyph(glyph:XML, cns:CompoundNodeSprite): XML
+		{	
+			var tempXML:XML = glyphToXML[cns.data.id];
+			var bboxList:XMLList = tempXML.elements("bbox");
+			
+			for each (var bbox:XML in bboxList) 
+			{
+				var glyphBbox:Rectangle = cns.data.glyph_bbox;
+				
+				bbox.@["x"] = cns.x - glyphBbox.width/2;
+				bbox.@["y"] = cns.y - glyphBbox.height/2;
+			}
+			
+			glyph = tempXML;
+			
+			for each (var childSprite:CompoundNodeSprite in cns.getNodes()) 
+			{
+				writeGlyph(glyph, childSprite);
+			}
+			
+			return tempXML;
 		}
 		
 		/**
@@ -121,8 +162,9 @@ package org.cytoscapeweb.model.converters
 		 */
 		public function parse(sbgnML:XML):DataSet 
 		{	
-			sbgnml = sbgnML;
-			
+			// Initialize lookup objects
+			glyphToXML = {};
+			arcToXML = {}
 			var lookup:Object = {};
 			
 			var glyphSprites:Array = new Array();
@@ -136,8 +178,9 @@ package org.cytoscapeweb.model.converters
 			var glyphSchema:DataSchema = initGlyphSchema();
 			var arcSchema:DataSchema = initArcSchema();
 			
-			var glyphs:XMLList = sbgnml.elements("map")..glyph;
-			var arcs:XMLList = sbgnml.elements("map").elements("arc");
+			var glyphs:XMLList = sbgnML.elements("map")..glyph;
+			var arcs:XMLList = sbgnML.elements("map").elements("arc");	
+			
 			
 			//parse glyphs
 			for each (var glyph:XML in glyphs) 
@@ -168,6 +211,7 @@ package org.cytoscapeweb.model.converters
 				}
 				
 				lookup[cns.data.id] = cns;
+				glyphToXML[cns.data.id] = glyph;
 			}
 			
 			// Add Child glyphs
@@ -221,11 +265,11 @@ package org.cytoscapeweb.model.converters
 			//parse arcs
 			for each (var arc:XML in arcs) 
 			{
-				e = parseArcData(arc,arcSchema);			
+				e = parseArcData(arc,arcSchema);
 				arcSprites.push(e);
+				arcToXML[e[ID]] = arc;
 			}
-			
-			
+
 			return new DataSet(
 				new DataTable(glyphSprites,glyphSchema),
 				new DataTable(arcSprites,arcSchema)
@@ -288,7 +332,6 @@ package org.cytoscapeweb.model.converters
 						
 						if(portIDtoOwnerGlyph[tmpStr] != null)
 							n[ARC_TARGET] = portIDtoOwnerGlyph[tmpStr];
-						trace("TARGET "+n[ARC_TARGET]);
 						
 					}
 					else if (attr.name() == "source") 
@@ -299,7 +342,6 @@ package org.cytoscapeweb.model.converters
 						
 						if(portIDtoOwnerGlyph[tmpStr] != null)
 							n[ARC_SOURCE] = portIDtoOwnerGlyph[tmpStr];
-						trace("SOURCE "+n[ARC_SOURCE]);
 					}
 					else if (attr.name() == CLASS) 
 					{
@@ -340,6 +382,9 @@ package org.cytoscapeweb.model.converters
 						n[ARC_END_Y] = DataUtil.parseValue(attr.toString(), field.type);
 					}
 				}
+				
+				// set arc id
+				n[ID] = n[ARC_SOURCE] + "to" + n[ARC_TARGET];
 				
 			}
 			
