@@ -149,10 +149,10 @@ package org.cytoscapeweb.model.converters
 			
 			for each (var childSprite:CompoundNodeSprite in cns.getNodes()) 
 			{
-				writeGlyph(glyph, childSprite);
+				glyph.appendChild(writeGlyph(glyph, childSprite));
 			}
 			
-			return tempXML;
+			return glyph;
 		}
 		
 		/**
