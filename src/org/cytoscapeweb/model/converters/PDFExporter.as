@@ -29,18 +29,24 @@
 */
 package org.cytoscapeweb.model.converters { 
     import flare.display.TextSprite;
+    import flare.util.Colors;
     import flare.vis.data.DataSprite;
     import flare.vis.data.EdgeSprite;
     import flare.vis.data.NodeSprite;
     
+    import flash.display.Bitmap;
+    import flash.display.BitmapData;
     import flash.display.CapsStyle;
     import flash.display.DisplayObject;
     import flash.filters.BitmapFilter;
     import flash.filters.GlowFilter;
+    import flash.geom.Matrix;
     import flash.geom.Point;
     import flash.geom.Rectangle;
     import flash.text.TextField;
     import flash.utils.ByteArray;
+    
+    import mx.graphics.codec.PNGEncoder;
     
     import org.alivepdf.colors.RGBColor;
     import org.alivepdf.display.Display;
@@ -52,6 +58,7 @@ package org.cytoscapeweb.model.converters {
     import org.alivepdf.fonts.CoreFont;
     import org.alivepdf.fonts.FontFamily;
     import org.alivepdf.fonts.Style;
+    import org.alivepdf.images.ColorSpace;
     import org.alivepdf.layout.Layout;
     import org.alivepdf.layout.Orientation;
     import org.alivepdf.layout.Size;
@@ -69,6 +76,7 @@ package org.cytoscapeweb.model.converters {
     import org.cytoscapeweb.util.NodeShapes;
     import org.cytoscapeweb.util.Utils;
     import org.cytoscapeweb.util.VisualProperties;
+    import org.cytoscapeweb.view.ApplicationMediator;
     import org.cytoscapeweb.view.components.GraphView;
     import org.cytoscapeweb.vis.data.CompoundNodeSprite;
         
@@ -92,7 +100,7 @@ package org.cytoscapeweb.model.converters {
         
         // ========[ PUBLIC PROPERTIES ]============================================================
 
-        public var margin:Number = 10;
+        public var margin:Number = 30;
 
         // ========[ CONSTRUCTOR ]==================================================================
         
@@ -163,7 +171,7 @@ package org.cytoscapeweb.model.converters {
             _shiftY = sp.y - margin;
             
             // Draw elements:
-            if (nodes != null && nodes.length > 0) {
+            /*if (nodes != null && nodes.length > 0) {
                 var elements:Array = nodes.concat(edges);
                 // Sort elements by their z-order,
                 // so overlapping nodes/edges will have the same position in the generated image:
@@ -180,8 +188,43 @@ package org.cytoscapeweb.model.converters {
                         if (ds is NodeSprite) drawLabel(pdf, ds);
                     }
                 }
-            }
+            }*/
     
+			var bounds:Rectangle = _graphView.vis.getRealBounds();
+			
+			// At least 1 pixel:
+			var _w:int = Math.max(bounds.width, 1);
+			var _h:int = Math.max(bounds.height, 1);
+			
+			// Maximum pixel count (http://kb2.adobe.com/cps/496/cpsid_49662.html)
+			var pcount:int = _w * _h;
+			const MAX_PCOUNT:Number = 0xFFFFFF;
+			const MAX_PSIDE:Number = 8191;
+			var f:Number = 1;
+			
+			if (pcount > MAX_PCOUNT)
+				f = f * MAX_PCOUNT/pcount;
+			
+			var maxSide:int = Math.max(_w, _h);
+			
+			if (maxSide > MAX_PSIDE)
+				f = f * MAX_PSIDE/maxSide;
+			
+			if (f < 1) {
+				_w *= f;
+				_h *= f;
+			}
+			
+			// Draw the image:
+			var color:uint = config.visualStyle.getValue(VisualProperties.BACKGROUND_COLOR);
+			var source:BitmapData = new BitmapData(_w, _h, false, color);
+			var matrix:Matrix = new Matrix(1, 0, 0, 1, -bounds.x, -bounds.y);
+			matrix.scale(f, f);
+			source.draw(_graphView.vis, matrix);
+
+			var bitMap:Bitmap = new Bitmap(source);
+			pdf.addImage(bitMap);
+	
             var bytes:ByteArray = pdf.save(Method.LOCAL);
     
             return bytes;

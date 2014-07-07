@@ -148,6 +148,8 @@ package org.cytoscapeweb.view.render {
 				for each (var tmpCns:CompoundNodeSprite in stateAndInfoGlyphs) 
 				{
 					var childRect:Rectangle = tmpCns.bounds;
+					var childBbox:Rectangle = tmpCns.data.glyph_bbox;
+					var parentBbox:Rectangle = cns.data.glyph_bbox;
 					
 					// Remove textsprite each time 
 					if (cns.getChildByName(tmpCns.data.id)  != null )
@@ -170,12 +172,29 @@ package org.cytoscapeweb.view.render {
 					
 					cns.addChild(myTextBox);
 					
+					// Adjust the position of state variable and unit of information glyphs
+					var x:Number = 0;
+					var y:Number = 0;
+
+					var relativePos = (parentBbox.y+parentBbox.height/2)-(childBbox.y + childBbox.height/2);
+					var isTop:Boolean = relativePos > 0;
+					var isBottom:Boolean = relativePos < 0;
+					
+					if (isBottom){
+						y += cns.height/2 - childBbox.height/2;
+						tmpCns.y = cns.bounds.bottom; 
+					}
+					else{ 
+						y -= cns.height/2 + childBbox.height/2;
+						tmpCns.y = cns.bounds.top;
+					}
+					
+					x -= cns.width/2 + (parentBbox.x - childBbox.x);
+					tmpCns.x = cns.bounds.x + (-parentBbox.x + childBbox.x) + childBbox.width/2;
+
+						
 					if (tmpCns.data.glyph_class == STATE_VARIABLE) 
 					{
-						var x = -cns.width/2 ;
-						var y = cns.height/2 - childRect.height/2 ;
-						
-						x = x + (cns.data.glyph_bbox.x - tmpCns.data.glyph_bbox.x) + cns.bounds.width/2 ;
 						
 						g.beginFill(0xffffff, 1);
 						g.drawEllipse(x,y,childRect.width, childRect.height);
@@ -192,11 +211,6 @@ package org.cytoscapeweb.view.render {
 						
 					else if (tmpCns.data.glyph_class == UNIT_OF_INFORMATION) 
 					{
-						var x = -cns.width/2 ;
-						
-						var y = cns.height/2 + childRect.height/2 ;
-						
-						x = x + (cns.data.glyph_bbox.x - tmpCns.data.glyph_bbox.x) + cns.bounds.width/2 ;
 						
 						g.beginFill(0xffffff, 1);
 						g.drawRect(x,y,childRect.width, childRect.height);

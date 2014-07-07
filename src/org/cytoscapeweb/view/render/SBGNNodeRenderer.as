@@ -253,11 +253,12 @@ package org.cytoscapeweb.view.render
 			{
 				for each (var tmpCns:CompoundNodeSprite in stateAndInfoGlyphs) 
 				{					
-					var childRect:Rectangle = tmpCns.data.glyph_bbox;               
+					var childRect:Rectangle = tmpCns.data.glyph_bbox;     
 					
 					// Adjust the position of state variable and unit of information glyphs
 					var x:Number = -cns.x + tmpCns.x-childRect.width/2;
 					var y:Number = -cns.y + tmpCns.y-childRect.height/2;
+					
 					
 					if (cns.getChildByName(tmpCns.data.id)  != null )
 					{

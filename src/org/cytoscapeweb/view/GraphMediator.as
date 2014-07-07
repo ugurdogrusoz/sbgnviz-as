@@ -850,7 +850,7 @@ package org.cytoscapeweb.view {
                             if (!ns.props.$selected || (n == target && !n.props.$selected)) {
                                 // update the bounds of the compound node
                                 this.vis.updateCompoundBounds(ns);
-                                
+								
                                 // render the compound node with the new bounds
                                 ns.render();
                             }

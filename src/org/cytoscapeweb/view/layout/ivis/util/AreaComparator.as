@@ -3,9 +3,7 @@ package org.cytoscapeweb.view.layout.ivis.util
 	import org.as3commons.collections.framework.IComparator;
 
 	public class AreaComparator implements IComparator 
-	{
-		import org.as3commons.collections.utils.UncomparableType;
-		
+	{	
 		public function compare(item1:*, item2:*):int
 		{
 			var area1:Number = item1.getWidth() * item1.getHeight();
@@ -22,6 +20,5 @@ package org.cytoscapeweb.view.layout.ivis.util
 			
 			return 0;
 		}
-		
 	}
 }

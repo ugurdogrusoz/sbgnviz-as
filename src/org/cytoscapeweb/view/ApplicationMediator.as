@@ -254,7 +254,7 @@ package org.cytoscapeweb.view {
                     var pdfExp:PDFExporter = new PDFExporter(graphView);
                     image = pdfExp.export(graphProxy.nodes,
                                           edges,
-                                          configProxy.visualStyle,
+                                          configProxy.config.visualStyle,
                                           configProxy.config,
                                           graphProxy.zoom,
                                           width,
@@ -263,7 +263,7 @@ package org.cytoscapeweb.view {
                     var svgConv:SVGExporter = new SVGExporter(graphView);
                     image = svgConv.export(graphProxy.nodes,
                                            edges,
-                                           configProxy.visualStyle,
+                                           configProxy.config.visualStyle,
                                            configProxy.config,
                                            graphProxy.zoom,
                                            width,
