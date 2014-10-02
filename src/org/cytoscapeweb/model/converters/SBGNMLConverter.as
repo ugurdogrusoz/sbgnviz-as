@@ -143,6 +143,7 @@ package org.cytoscapeweb.model.converters
 		protected function writeGlyph(glyph:XML, cns:CompoundNodeSprite): XML
 		{	
 			var tempXML:XML = glyphToXML[cns.data.id];
+			var compartmentPaddingHalf = 2;
 			
 			if (tempXML != null) 
 			{
@@ -151,10 +152,20 @@ package org.cytoscapeweb.model.converters
 				{
 					var glyphBbox:Rectangle = cns.data.glyph_bbox;
 					
-					bbox.@["x"] = cns.x - cns.bounds.width/2;
-					bbox.@["y"] = cns.y - cns.bounds.height/2;
-					bbox.@["w"] = cns.bounds.width;
-					bbox.@["h"] = cns.bounds.height;
+					if(cns.data.glyph_class == "complex" || cns.data.glyph_class == "compartment"  )
+					{
+						bbox.@["x"] = cns.x - cns.bounds.width/2 - compartmentPaddingHalf;
+						bbox.@["y"] = cns.y - cns.bounds.height/2 - compartmentPaddingHalf;
+						bbox.@["w"] = cns.bounds.width + 2*compartmentPaddingHalf;
+						bbox.@["h"] = cns.bounds.height+ 2*compartmentPaddingHalf;
+					}
+					else
+					{
+						bbox.@["x"] = cns.x - cns.bounds.width/2;
+						bbox.@["y"] = cns.y - cns.bounds.height/2;
+						bbox.@["w"] = cns.bounds.width;
+						bbox.@["h"] = cns.bounds.height;
+					}
 				}
 				
 				glyph = tempXML.copy();
