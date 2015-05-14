@@ -92,5 +92,5 @@ to see it in full size. A User's Guide can be found
 
 ## Team
 
-  * Istemi Bahceci, Ugur Dogrusoz, Mecit Sari, [http://www.cs.bilkent.edu.tr/~ivis i-Vis at Bilkent University]
-  * S.Onur Sumer, [http://cbio.mskcc.org cbio at MSKCC]
+  * Istemi Bahceci, Ugur Dogrusoz, Mecit Sari, [i-Vis at Bilkent University](http://www.cs.bilkent.edu.tr/~ivis)
+  * S.Onur Sumer, [cBio at MSKCC](http://cbio.mskcc.org)
